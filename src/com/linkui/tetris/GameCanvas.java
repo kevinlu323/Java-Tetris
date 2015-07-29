@@ -3,18 +3,27 @@ package com.linkui.tetris;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 
 public class GameCanvas extends Canvas{
 	static final int ROWS = 25;
 	static final int COLS = 15;
 	static final int BLOCK_SIZE = 15;
+	private Random r = new Random();
 	
-	private Block b = new Block();
+	private Block currentBlock = null;
+	private List<Block> blockList = new ArrayList();
+	private boolean[][] drawMap = new boolean[25][15];
+	private Image offScreenImage = null;
 	
 	public GameCanvas(){
+		blockList.add(new Block(this,r.nextInt(6)+1));
 		this.setSize(COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
 		this.addKeyListener(new KeyMonitor());
 		new PaintThread().start();
@@ -31,9 +40,25 @@ public class GameCanvas extends Canvas{
 		for(int i = 1; i < COLS; i++){
 			g.drawLine(i*BLOCK_SIZE, 0, i*BLOCK_SIZE, ROWS * BLOCK_SIZE);
 		}
-		b.move();
-		b.draw(g);
-		g.setColor(c);
+		for(int i = 0; i < blockList.size(); i++){
+			currentBlock = blockList.get(i);
+			currentBlock.move(blockList);
+			currentBlock.draw(g);
+			g.setColor(c);
+		}
+		if(currentBlock.isStop()){
+			currentBlock.fillMap(drawMap);
+			blockList.add(new Block(this, r.nextInt(6)+1));
+		}
+	}
+	
+	public void update(Graphics g) {
+		if(offScreenImage == null){
+			offScreenImage = this.createImage(COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+		}
+		Graphics gOff = offScreenImage.getGraphics();
+		paint(gOff);
+		g.drawImage(offScreenImage, 0, 0, null);
 	}
 	
 	private class PaintThread extends Thread{
@@ -41,7 +66,7 @@ public class GameCanvas extends Canvas{
 			while(true){
 				repaint();
 				try{
-					Thread.sleep(100);
+					Thread.sleep(200);
 				} catch (InterruptedException e){
 					e.printStackTrace();
 				}
@@ -55,9 +80,20 @@ public class GameCanvas extends Canvas{
 			if(key == KeyEvent.VK_Z){
 				System.out.println("Key is pressed");
 			}
-			b.KeyPressed(e);
+			currentBlock.KeyPressed(e);
+			if(key == KeyEvent.VK_M){
+				for(int i = 0; i<25 ; i++){
+					for (int j = 0; j<15; j++){
+						if(drawMap[i][j]) System.out.print("1 ");
+						else System.out.print("0 ");
+					}
+					System.out.println();
+				}
+			}
 		}
 		
 	}
+
+
 }
 
