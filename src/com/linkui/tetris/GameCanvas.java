@@ -23,7 +23,8 @@ public class GameCanvas extends Canvas{
 	private Image offScreenImage = null;
 	
 	public GameCanvas(){
-		blockList.add(new Block(this,r.nextInt(6)+1));
+		currentBlock = new Block(this,r.nextInt(7)+1, drawMap);
+		blockList.add(currentBlock);
 		this.setSize(COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
 		this.addKeyListener(new KeyMonitor());
 		new PaintThread().start();
@@ -40,15 +41,18 @@ public class GameCanvas extends Canvas{
 		for(int i = 1; i < COLS; i++){
 			g.drawLine(i*BLOCK_SIZE, 0, i*BLOCK_SIZE, ROWS * BLOCK_SIZE);
 		}
+	
+		currentBlock.move(drawMap);
 		for(int i = 0; i < blockList.size(); i++){
-			currentBlock = blockList.get(i);
-			currentBlock.move(blockList);
-			currentBlock.draw(g);
+			Block b = blockList.get(i);
+			b.draw(g);
 			g.setColor(c);
 		}
+		
 		if(currentBlock.isStop()){
 			currentBlock.fillMap(drawMap);
-			blockList.add(new Block(this, r.nextInt(6)+1));
+			currentBlock = new Block(this, r.nextInt(7)+1, drawMap);
+			blockList.add(currentBlock);
 		}
 	}
 	

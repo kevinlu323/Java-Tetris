@@ -12,9 +12,11 @@ public class Block {
 	enum Direction {L, R, D, STOP}
 	Direction dir = Direction.D;
 	GameCanvas gc = null;
+	boolean[][] map;
 	
-	public Block(GameCanvas gc, int type){
+	public Block(GameCanvas gc, int type, boolean[][] map){
 		this.gc = gc;
+		this.map = map;
 		switch(type){
 		case 1:
 			nodeList.add(new Node(1,6)); //the first block is the center one.
@@ -62,20 +64,30 @@ public class Block {
 		
 	}
 	
-	public void move(List<Block> blockList){
-		Iterator<Node> it = nodeList.iterator();
-		while(it.hasNext()){
-			Node n = it.next();
-			n.move(dir);
+	public void move(boolean[][] map){
+		List<Node> tmpList = new ArrayList<Node>(); //Save node position before moving
+		for(int i =0; i<nodeList.size(); i++){
+			tmpList.add(new Node(nodeList.get(i).getRow(), nodeList.get(i).getCol()));
 		}
-		if(isTouchGround()) dir = Direction.STOP;
-		else dir = Direction.D;
+		for(int i =0; i<nodeList.size(); i++){
+			nodeList.get(i).move(dir);
+		}
+		if(isTouchGround() || isHitOthers(map)){ 
+			nodeList=tmpList;
+			dir = Direction.STOP;
+		} else {
+			dir = Direction.D;
+		}
 	}
 	
 	/**
 	 * This method is used to rotate block.
 	 */
 	public void rotate(){
+		List<Node> tmpList = new ArrayList<Node>(); //Save node position before moving
+		for(int i =0; i<nodeList.size(); i++){
+			tmpList.add(new Node(nodeList.get(i).getRow(), nodeList.get(i).getCol()));
+		}
 		int x0, y0; //center coordinate of block, here it is the coordinate of the first node.
 		int x, y; //coordinate after rotate;
 		x0 = nodeList.get(0).getCol();
@@ -85,7 +97,9 @@ public class Block {
 			y = y0 - (nodeList.get(i).getCol()-x0);
 			nodeList.get(i).setCol(x);
 			nodeList.get(i).setRow(y);
-			
+		}
+		if(isTouchGround() || isHitLeft() || isHitRight() || isHitOthers(map)){ 
+			nodeList=tmpList;
 		}
 	}
 	
@@ -94,11 +108,15 @@ public class Block {
 			map[nodeList.get(i).getRow()][nodeList.get(i).getCol()] = true;			
 		}
 	}
-	/*public boolean isHitOthers(List<Block> blockList){
-		for(int i = 0; i < blockList.size(); i++){
-			Block b = blockList.get(i);
+	public boolean isHitOthers(boolean[][] map){
+		for(int i = 0; i < nodeList.size(); i++){
+			Node n = nodeList.get(i);
+			if(true == map[n.getRow()][n.getCol()]){
+				return true; // has collision with current Nodes, return true
+			}
 		}
-	}*/
+		return false;
+	}
 	
 	public boolean isStop(){
 		if (dir == Direction.STOP)
@@ -114,7 +132,7 @@ public class Block {
 				maxRow = n.getRow();
 			}
 		}
-		if(maxRow >= GameCanvas.ROWS-1) return true;
+		if(maxRow >= GameCanvas.ROWS) return true;
 		else return false;
 	}
 	
@@ -134,8 +152,7 @@ public class Block {
 	}
 	
 	public boolean isHitRight(){
-		int maxCol = 0;
-		int nodeCol;
+		int nodeCol, maxCol = 0;
 		Iterator<Node> it = nodeList.iterator();
 		while(it.hasNext()){
 			Node n = it.next();
